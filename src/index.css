@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+body {
+  background-color: #fff;
+}
+
 .container {
   position: relative;
   max-width: 420px;
