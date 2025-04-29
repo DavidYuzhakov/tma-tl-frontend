@@ -53,7 +53,9 @@ export function ProjectCard({
         <h4 className="font-bold text-center text-xl text-green-600">
           {title}
         </h4>
-        <p className="text-black/70 text-sm grow">{desc}</p>
+        <p className="text-black/70 text-sm grow overflow-hidden text-ellipsis">
+          {desc}
+        </p>
       </div>
       <div
         onClick={deleteHandler}
