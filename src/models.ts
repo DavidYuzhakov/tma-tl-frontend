@@ -8,7 +8,8 @@ export interface ITask {
   _id: string
   projectId: string
   name: string
-  date: Date
+  date: string
+  time: string
   priority: 'high' | 'middle' | 'low'
   isCompleted: boolean
 }

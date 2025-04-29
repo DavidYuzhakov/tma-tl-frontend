@@ -5,10 +5,19 @@ import { isAxiosError } from 'axios'
 import apiInstance from '../axios'
 import { TaskCard } from '../components/TaskCard'
 import { Plus } from '../components/Plus'
+import { SubmitHandler, useForm } from 'react-hook-form'
+
+interface IFormValues {
+  name: string
+}
 
 export function ProjectPage() {
   const [tasks, setTasks] = useState<ITask[]>([])
-  const [name, setName] = useState('')
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<IFormValues>({ values: { name: '' } })
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { id } = useParams()
@@ -34,38 +43,29 @@ export function ProjectPage() {
     return <p className="text-center">Loading... Try again later please</p>
   }
 
-  const createTask = async () => {
-    if (name.length > 0) {
-      try {
-        setLoading(true)
-        setIsOpen(true)
-        const { data } = await apiInstance.post<{ task: ITask }>(
-          `/tasks/${id}`,
-          {
-            name,
-          }
-        )
-        setTasks((prev) => [...prev, data.task])
-      } catch (err) {
+  const createTask: SubmitHandler<IFormValues> = async ({ name }) => {
+    try {
+      setLoading(true)
+      setIsOpen(true)
+      const { data } = await apiInstance.post<{ task: ITask }>(`/tasks/${id}`, {
+        name,
+      })
+      setTasks((prev) => [...prev, data.task])
+    } catch (err) {
+      console.log(err)
+      if (isAxiosError(err)) {
         console.log(err)
-        if (isAxiosError(err)) {
-          console.log(err)
-          alert(
-            err.response?.data[0]?.msg ??
-              err.response?.data?.message ??
-              err.message
-          )
-        }
-      } finally {
-        setLoading(false)
-        setIsOpen(false)
+        alert(
+          err.response?.data[0]?.msg ??
+            err.response?.data?.message ??
+            err.message
+        )
       }
-    } else {
-      alert('Fill in the appropriate fields')
+    } finally {
+      setLoading(false)
+      setIsOpen(false)
     }
   }
-
-  const openModal = () => setIsOpen(true)
 
   return (
     <div className="flex flex-col gap-3">
@@ -77,17 +77,33 @@ export function ProjectPage() {
         <p className="text-center">There are no tasks, add at least one</p>
       )}
 
-      <Plus handler={openModal} />
+      <Plus handler={() => setIsOpen(true)} />
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-          <form className="bg-white p-6 rounded-lg w-full flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(createTask)}
+            className="bg-white p-6 rounded-lg w-full flex flex-col gap-4"
+          >
             <h2 className="text-lg font-semibold">Add task</h2>
 
+            {errors?.name && (
+              <p className="text-red-400">
+                {errors.name.message ?? 'Invalid name'}
+              </p>
+            )}
             <input
-              required
+              {...register('name', {
+                required: 'The field must be is required!',
+                minLength: {
+                  value: 2,
+                  message: 'min 2 characters',
+                },
+                maxLength: {
+                  value: 30,
+                  message: 'max 30 characters',
+                },
+              })}
               className="border p-2 rounded"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
               placeholder="Task name"
             />
 
@@ -100,7 +116,6 @@ export function ProjectPage() {
               </button>
               <button
                 type="submit"
-                onClick={createTask}
                 className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-sm"
               >
                 Save

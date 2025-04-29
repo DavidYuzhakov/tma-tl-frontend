@@ -3,14 +3,23 @@ import { useEffect, useRef, useState } from 'react'
 import { ITask } from '../models'
 import apiInstance from '../axios'
 import { isAxiosError } from 'axios'
+import { SubmitHandler, useForm } from 'react-hook-form'
 
 interface ITaskCardProps {
   _id: string
   name: string
   isCompleted: boolean
-  date: Date
+  date: string
+  time: string
   priority: 'high' | 'middle' | 'low'
   setTasks: React.Dispatch<React.SetStateAction<ITask[]>>
+}
+
+interface IFormValues {
+  name: string
+  date: string
+  priority: 'high' | 'middle' | 'low'
+  time: string
 }
 
 export function TaskCard({
@@ -19,18 +28,26 @@ export function TaskCard({
   isCompleted,
   date,
   priority,
+  time,
   setTasks,
 }: ITaskCardProps) {
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [editedName, setEditedName] = useState(name)
   const [editedPriority, setEditedPriority] = useState<
     'high' | 'middle' | 'low'
   >(priority)
-  const [editedDate, setEditedDate] = useState<Date>(date)
   const [editedIsCompleted, setEditedIsCompleted] = useState(isCompleted)
 
   const isFirstRender = useRef(true)
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+    reset,
+  } = useForm<IFormValues>({
+    values: { date, name, priority, time },
+    mode: 'onBlur',
+  })
 
   const updateTask = async (updatedFields: Partial<ITask>) => {
     try {
@@ -55,20 +72,17 @@ export function TaskCard({
     }
   }
 
-  const handleSave = async () => {
+  const submitHandler: SubmitHandler<IFormValues> = async (data) => {
     setIsOpen(false)
-    await updateTask({
-      name: editedName,
-      date: editedDate,
-      priority: editedPriority,
-      isCompleted: editedIsCompleted,
-    })
+    await updateTask(data)
+    reset()
   }
 
   const handleDelete = async () => {
     if (!window.confirm('Do you want to delete task?')) return
     try {
       setLoading(true)
+      console.log(_id)
       await apiInstance.delete(`/tasks/${_id}`)
       setTasks((prev) => prev.filter((task) => task._id !== _id))
     } catch (err) {
@@ -135,23 +149,44 @@ export function TaskCard({
               {new Date(date).toLocaleDateString()}
             </span>
           </p>
+          <p>
+            Time: <span className="font-medium">{time}</span>
+          </p>
         </div>
       </div>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(submitHandler)}
+            className="bg-white p-6 rounded-lg w-full max-w-md flex flex-col gap-4"
+          >
             <h2 className="text-lg font-semibold">Edit Task</h2>
 
+            {errors?.name && (
+              <p className="text-red-400">
+                {errors.name.message ?? 'Invalid name'}
+              </p>
+            )}
             <input
-              className="border p-2 rounded"
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
+              {...register('name', {
+                required: 'The field must be is required!',
+                minLength: {
+                  value: 2,
+                  message: 'min 2 characters',
+                },
+                maxLength: {
+                  value: 30,
+                  message: 'max 30 characters',
+                },
+              })}
+              className="border p-2 rounded outline-green-600"
               placeholder="Task name"
             />
 
             <select
-              className="border p-2 rounded"
+              {...register('priority')}
+              className="border p-2 rounded outline-green-600"
               value={editedPriority}
               onChange={(e) =>
                 setEditedPriority(e.target.value as 'high' | 'middle' | 'low')
@@ -163,12 +198,16 @@ export function TaskCard({
             </select>
 
             <input
-              className="border p-2 rounded"
+              {...register('date')}
+              className="border p-2 rounded outline-green-600"
               type="date"
-              value={new Date(editedDate).toISOString().substring(0, 10)}
-              onChange={(e) => setEditedDate(new Date(e.target.value))}
             />
 
+            <input
+              {...register('time')}
+              className="border p-2 rounded outline-green-600 "
+              type="time"
+            />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setIsOpen(false)}
@@ -177,13 +216,13 @@ export function TaskCard({
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                type="submit"
                 className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-sm"
               >
                 Save
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

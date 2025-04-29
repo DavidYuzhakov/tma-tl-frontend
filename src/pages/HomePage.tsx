@@ -4,13 +4,23 @@ import apiInstance from '../axios'
 import { IProject } from '../models'
 import { ProjectCard } from '../components/ProjectCard'
 import { Plus } from '../components/Plus'
+import { SubmitHandler, useForm } from 'react-hook-form'
+
+interface IFormValues {
+  title: string
+  desc: string
+}
 
 export function HomePage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [projects, setProjects] = useState<IProject[]>([])
-  const [title, setTitle] = useState('')
-  const [desc, setDesc] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<IFormValues>({ values: { title: '', desc: '' } })
 
   useEffect(() => {
     async function getProjects() {
@@ -36,7 +46,7 @@ export function HomePage() {
     return <p className="text-center">Loading... Try again later </p>
   }
 
-  const createProject = async () => {
+  const createProject: SubmitHandler<IFormValues> = async ({ title, desc }) => {
     if (title.length > 0 && desc.length > 0) {
       try {
         setLoading(true)
@@ -88,22 +98,51 @@ export function HomePage() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-          <form className="bg-white p-6 rounded-lg w-full flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(createProject)}
+            className="bg-white p-6 rounded-lg w-full flex flex-col gap-4"
+          >
             <h2 className="text-lg font-semibold">Add project</h2>
 
+            {errors?.title && (
+              <p className="text-red-400">
+                {errors.title.message ?? 'Invalid title'}
+              </p>
+            )}
             <input
-              required
-              className="border p-2 rounded"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register('title', {
+                required: 'The field must be is required!',
+                minLength: {
+                  value: 1,
+                  message: 'min 1 characters',
+                },
+                maxLength: {
+                  value: 10,
+                  message: 'max 10 characters',
+                },
+              })}
+              className="border p-2 rounded outline-green-600"
               placeholder="Project title"
             />
 
+            {errors?.desc && (
+              <p className="text-red-400">
+                {errors.desc.message ?? 'Invalid description'}
+              </p>
+            )}
             <textarea
-              required
-              className="border p-2 rounded outline-none resize-none h-[100px]"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
+              {...register('desc', {
+                required: 'The field must be is required!',
+                minLength: {
+                  value: 10,
+                  message: 'min 10 characters',
+                },
+                maxLength: {
+                  value: 100,
+                  message: 'max 100 characters',
+                },
+              })}
+              className="border p-2 rounded outline-green-600 resize-none h-[100px]"
               placeholder="Project escription"
             />
 
@@ -116,7 +155,6 @@ export function HomePage() {
               </button>
               <button
                 type="submit"
-                onClick={createProject}
                 className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-sm"
               >
                 Save
