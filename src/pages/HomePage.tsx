@@ -72,15 +72,15 @@ export function HomePage() {
   return (
     <>
       {projects.length > 0 ? (
-        projects.map((project) => (
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          {projects.map((project) => (
             <ProjectCard
               key={project._id}
               {...project}
               setProjects={setProjects}
             />
-          </div>
-        ))
+          ))}
+        </div>
       ) : (
         <p className="text-center">There are no projects, add at least one</p>
       )}
