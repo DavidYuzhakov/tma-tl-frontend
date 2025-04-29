@@ -1,12 +1,16 @@
 @import 'tailwindcss';
 
-body {
-  background-color: #111;
-  color: #fff;
-}
-
 .container {
+  position: relative;
   max-width: 420px;
   margin: 0 auto;
-  padding: 20px 10px;
+  padding: 60px 10px 20px 10px;
+}
+
+.completedIcon {
+  background-color: red;
+}
+
+.completedIcon circle {
+  background-color: red;
 }
